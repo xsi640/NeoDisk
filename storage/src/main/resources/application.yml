@@ -1,7 +1,4 @@
 spring:
   data:
     mongodb:
-      uri: mongodb://127.0.0.1:27017/neodisk
-      username: root
-      password:
-        - 123456
+      uri: mongodb://root:123456@localhost:27017/neodisk
