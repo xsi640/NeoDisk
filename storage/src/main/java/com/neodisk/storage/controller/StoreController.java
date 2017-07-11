@@ -2,6 +2,7 @@ package com.neodisk.storage.controller;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -13,29 +14,45 @@ import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.multipart.MultipartFile;
 
-import com.neodisk.commons.UUIDUtils;
-import com.neodisk.service.StoreService;
+import com.neodisk.exceptions.NeoException;
+import com.neodisk.message.ResponseMessage;
+import com.neodisk.message.body.None;
+import com.neodisk.storage.service.StoreService;
 
 @Controller
 public class StoreController {
 	@Autowired
 	private StoreService storeService;
 
-	@RequestMapping("/file")
-	public String file() {
-		return "/file";
+	@RequestMapping(value = "/storage/{id}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+	public ResponseMessage<None> upload(HttpServletRequest request, @PathVariable("id") String id)
+			throws IOException, NeoException, FileUploadException {
+
+		ServletFileUpload upload = new ServletFileUpload();
+		FileItemIterator iterator = upload.getItemIterator(request);
+		if (iterator.hasNext()) {
+			FileItemStream item = iterator.next();
+			if (!item.isFormField()) {
+				InputStream inputStream = item.openStream();
+				storeService.save(id, inputStream);
+			}
+		}
+
+		return new ResponseMessage<None>();
 	}
 
-	@RequestMapping(value = "/upload", method = RequestMethod.POST, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-	@ResponseBody
-	public String handleFileUpload(HttpServletRequest request) throws IOException, Exception{
-		storeService.save(UUIDUtils.randomUUIDString(), request.getInputStream());
-		return "successed";
+	@RequestMapping(value = "/storage/{id}", method = RequestMethod.GET)
+	public void download(HttpServletResponse response, @PathVariable("id") String id) throws IOException, NeoException {
+		OutputStream outputStream = response.getOutputStream();
+		storeService.read(id, outputStream);
+	}
+	
+	@RequestMapping(value = "/storage/{id}", method = RequestMethod.DELETE)
+	public void delete(@PathVariable("id") String id){
+		storeService.delete(id);
 	}
 }
