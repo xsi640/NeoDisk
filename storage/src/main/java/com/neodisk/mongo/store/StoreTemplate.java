@@ -8,7 +8,7 @@ import com.neodisk.mongo.exceptions.StoreException;
 import com.neodisk.mongo.store.domain.StoreInfo;
 
 public interface StoreTemplate {
-	void save(String id, int chunkSize, InputStream inputStream) throws IOException;
+	void save(String id, int chunkSize, long size, InputStream inputStream) throws IOException;
 	void read(String id, OutputStream outputStream) throws StoreException, IOException;
 	void delete(String id);
 	void clearUnit();

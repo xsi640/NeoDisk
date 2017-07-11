@@ -13,13 +13,15 @@ import com.neodisk.mongo.store.domain.StoreUnit;
 public class DataWriter {
 	private String id;
 	private int chunkSize;
+	private long size;
 	private InputStream inputStream;
 	private MongoTemplate mongoTemplate;
 	private byte[] buffer = null;
 
-	public DataWriter(String id, int chunkSize, InputStream inputStream, MongoTemplate mongoTemplate) {
+	public DataWriter(String id, int chunkSize, long size, InputStream inputStream, MongoTemplate mongoTemplate) {
 		this.id = id;
 		this.chunkSize = chunkSize;
+		this.size = size;
 		this.inputStream = inputStream;
 		this.mongoTemplate = mongoTemplate;
 		if (chunkSize <= 0) {
@@ -31,7 +33,7 @@ public class DataWriter {
 	public void write() throws IOException {
 		int readed = -1;
 		long index = 0;
-		long size = 0;
+		long readedSize = 0;
 		try {
 			while ((readed = this.inputStream.read(buffer, 0, buffer.length)) != -1) {
 				StoreUnit unit = new StoreUnit();
@@ -45,7 +47,7 @@ public class DataWriter {
 					unit.setData(buffer);
 				}
 				mongoTemplate.save(unit);
-				size += readed;
+				readedSize += readed;
 				index++;
 			}
 		} catch (IOException ex) {
@@ -55,7 +57,8 @@ public class DataWriter {
 			storeInfo.setId(id);
 			storeInfo.setChunkSize(chunkSize);
 			storeInfo.setChunkCount(index);
-			storeInfo.setLength(size);
+			storeInfo.setLength(this.size);
+			storeInfo.setOk(this.size == readedSize);
 			mongoTemplate.save(storeInfo);
 		}
 	}

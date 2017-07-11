@@ -7,7 +7,7 @@ import com.neodisk.exceptions.NeoException;
 import com.neodisk.mongo.store.domain.StoreInfo;
 
 public interface StoreService {
-	void save(String id, InputStream stream) throws NeoException;
+	void save(String id, long size, InputStream stream) throws NeoException;
 
 	void read(String id, OutputStream stream) throws NeoException;
 	

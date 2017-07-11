@@ -11,6 +11,7 @@ public class StoreInfo {
 	private long chunkCount;
 	private long writeIndex;
 	private long length;
+	private boolean isOk;
 
 	public StoreInfo() {
 	}
@@ -53,6 +54,14 @@ public class StoreInfo {
 
 	public void setLength(long length) {
 		this.length = length;
+	}
+
+	public boolean isOk() {
+		return isOk;
+	}
+
+	public void setOk(boolean isOk) {
+		this.isOk = isOk;
 	}
 
 	@Override

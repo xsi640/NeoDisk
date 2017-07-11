@@ -26,14 +26,14 @@ public class StoreTemplateImpl implements StoreTemplate {
 	private MongoTemplate mongoTemplate;
 
 	@Override
-	public void save(String id, int chunkSize, InputStream inputStream) throws IOException {
+	public void save(String id, int chunkSize, long size, InputStream inputStream) throws IOException {
 		if (inputStream == null) {
 			throw new IllegalArgumentException("inputStream is null");
 		}
 		if (StringUtils.isEmpty(id)) {
 			throw new IllegalArgumentException("id is null");
 		}
-		DataWriter writer = new DataWriter(id, chunkSize, inputStream, mongoTemplate);
+		DataWriter writer = new DataWriter(id, chunkSize, size, inputStream, mongoTemplate);
 		writer.write();
 	}
 

@@ -1,16 +1,11 @@
 package com.neodisk.storage.controller;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.tomcat.util.http.fileupload.FileItemIterator;
-import org.apache.tomcat.util.http.fileupload.FileItemStream;
-import org.apache.tomcat.util.http.fileupload.FileUploadException;
-import org.apache.tomcat.util.http.fileupload.servlet.ServletFileUpload;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,17 +27,9 @@ public class StoreController {
 
 	@RequestMapping(value = "/storage/upload/{id}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
 	public ResponseMessage<None> upload(HttpServletRequest request, @PathVariable("id") String id)
-			throws IOException, NeoException, FileUploadException {
-
-		ServletFileUpload upload = new ServletFileUpload();
-		FileItemIterator iterator = upload.getItemIterator(request);
-		if (iterator.hasNext()) {
-			FileItemStream item = iterator.next();
-			if (!item.isFormField()) {
-				InputStream inputStream = item.openStream();
-				storeService.save(id, inputStream);
-			}
-		}
+			throws IOException, NeoException {
+		long size = request.getContentLengthLong();
+		storeService.save(id, size, request.getInputStream());
 		return new ResponseMessage<None>();
 	}
 

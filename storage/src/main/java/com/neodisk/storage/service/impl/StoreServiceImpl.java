@@ -27,9 +27,9 @@ public class StoreServiceImpl implements StoreService {
 	private StoreTemplate storeTemplate;
 
 	@Override
-	public void save(String id, InputStream stream) throws NeoException {
+	public void save(String id, long size, InputStream stream) throws NeoException {
 		try {
-			storeTemplate.save(id, CHUNK_SIZE, stream);
+			storeTemplate.save(id, CHUNK_SIZE, size, stream);
 		} catch (IOException e) {
 			logger.error(e.getMessage());
 			throw new NeoIOException(e.getMessage(), APIMsgType.inner_io_error, e);
