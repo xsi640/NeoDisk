@@ -32,26 +32,31 @@ public class DataWriter {
 		int readed = -1;
 		long index = 0;
 		long size = 0;
-		while ((readed = this.inputStream.read(buffer, 0, buffer.length)) != -1) {
-			StoreUnit unit = new StoreUnit();
-			unit.setId(UUIDUtils.randomUUIDString());
-			unit.setIndex(index);
-			unit.setStoreId(id);
-			if (readed < chunkSize) {
-				byte[] b = Arrays.copyOf(buffer, readed);
-				unit.setData(b);
-			} else {
-				unit.setData(buffer);
+		try {
+			while ((readed = this.inputStream.read(buffer, 0, buffer.length)) != -1) {
+				StoreUnit unit = new StoreUnit();
+				unit.setId(UUIDUtils.randomUUIDString());
+				unit.setIndex(index);
+				unit.setStoreId(id);
+				if (readed < chunkSize) {
+					byte[] b = Arrays.copyOf(buffer, readed);
+					unit.setData(b);
+				} else {
+					unit.setData(buffer);
+				}
+				mongoTemplate.save(unit);
+				size += readed;
+				index++;
 			}
-			mongoTemplate.save(unit);
-			size += readed;
-			index++;
+		} catch (IOException ex) {
+			throw ex;
+		} finally {
+			StoreInfo storeInfo = new StoreInfo();
+			storeInfo.setId(id);
+			storeInfo.setChunkSize(chunkSize);
+			storeInfo.setChunkCount(index);
+			storeInfo.setLength(size);
+			mongoTemplate.save(storeInfo);
 		}
-		StoreInfo storeInfo = new StoreInfo();
-		storeInfo.setId(id);
-		storeInfo.setChunkSize(chunkSize);
-		storeInfo.setChunkCount(index);
-		storeInfo.setLength(size);
-		mongoTemplate.save(storeInfo);
 	}
 }

@@ -5,13 +5,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import com.neodisk.mongo.exceptions.StoreException;
+import com.neodisk.mongo.store.domain.StoreInfo;
 
 public interface StoreTemplate {
-	public void save(String id, int chunkSize, InputStream inputStream) throws IOException;
-
-	public void read(String id, OutputStream outputStream) throws StoreException, IOException;
-
-	public void delete(String id);
-	
-	public void clearUnit();
+	void save(String id, int chunkSize, InputStream inputStream) throws IOException;
+	void read(String id, OutputStream outputStream) throws StoreException, IOException;
+	void delete(String id);
+	void clearUnit();
+	StoreInfo get(String id);
 }

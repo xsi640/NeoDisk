@@ -14,6 +14,7 @@ import com.neodisk.exceptions.NeoException;
 import com.neodisk.exceptions.NeoIOException;
 import com.neodisk.mongo.exceptions.StoreException;
 import com.neodisk.mongo.store.StoreTemplate;
+import com.neodisk.mongo.store.domain.StoreInfo;
 import com.neodisk.storage.service.StoreService;
 
 @Service
@@ -51,5 +52,10 @@ public class StoreServiceImpl implements StoreService {
 	@Override
 	public void delete(String id) {
 		storeTemplate.delete(id);
+	}
+
+	@Override
+	public StoreInfo get(String id) {
+		return storeTemplate.get(id);
 	}
 }

@@ -39,9 +39,8 @@ public class StoreTemplateImpl implements StoreTemplate {
 
 	@Override
 	public void read(String id, OutputStream outputStream) throws StoreException, IOException {
-		Query q = new Query(Criteria.where("id").is(id));
-		StoreInfo s = mongoTemplate.findOne(q, StoreInfo.class);
-		if (s != null) {
+		StoreInfo s = this.get(id);
+		if (s == null) {
 			throw new StoreException("not found storeInfo id:" + id);
 		}
 		DataReader reader = new DataReader(s, mongoTemplate, outputStream);
@@ -65,5 +64,11 @@ public class StoreTemplateImpl implements StoreTemplate {
 				mongoTemplate.remove(new Query(Criteria.where("storeId").is(storeId)), StoreUnit.class);
 			}
 		}		
+	}
+
+	@Override
+	public StoreInfo get(String id) {
+		Query q = new Query(Criteria.where("id").is(id));
+		return mongoTemplate.findOne(q, StoreInfo.class);
 	}
 }

@@ -9,6 +9,7 @@ public class StoreInfo {
 	private String id = UUIDUtils.randomUUIDString();
 	private int chunkSize;
 	private long chunkCount;
+	private long writeIndex;
 	private long length;
 
 	public StoreInfo() {
@@ -36,6 +37,14 @@ public class StoreInfo {
 
 	public void setChunkCount(long chunkCount) {
 		this.chunkCount = chunkCount;
+	}
+
+	public long getWriteIndex() {
+		return writeIndex;
+	}
+
+	public void setWriteIndex(long writeIndex) {
+		this.writeIndex = writeIndex;
 	}
 
 	public long getLength() {
