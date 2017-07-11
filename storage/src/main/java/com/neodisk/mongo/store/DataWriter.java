@@ -50,7 +50,7 @@ public class DataWriter {
 		StoreInfo storeInfo = new StoreInfo();
 		storeInfo.setId(id);
 		storeInfo.setChunkSize(chunkSize);
-		storeInfo.setChunkCount(index + 1);
+		storeInfo.setChunkCount(index);
 		storeInfo.setLength(size);
 		mongoTemplate.save(storeInfo);
 	}
