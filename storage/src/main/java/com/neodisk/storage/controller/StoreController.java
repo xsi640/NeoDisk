@@ -1,55 +1,71 @@
 package com.neodisk.storage.controller;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.neodisk.api.APIMsgType;
+import com.neodisk.commons.TypeParserUtils;
 import com.neodisk.exceptions.NeoException;
 import com.neodisk.message.ResponseMessage;
 import com.neodisk.message.body.None;
-import com.neodisk.mongo.store.domain.StoreInfo;
+import com.neodisk.mongo.store.domain.Store;
 import com.neodisk.storage.service.StoreService;
 
-@RestController
+@Controller
+@RequestMapping("/store/**")
 public class StoreController {
+
 	@Autowired
 	private StoreService storeService;
 
-	@RequestMapping(value = "/storage/upload/{id}", method = RequestMethod.POST, consumes = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-	public ResponseMessage<None> upload(HttpServletRequest request, @PathVariable("id") String id)
-			throws IOException, NeoException {
-		long size = request.getContentLengthLong();
-		storeService.save(id, size, request.getInputStream());
-		return new ResponseMessage<None>();
-	}
-
-	@RequestMapping(value = "/storage/download/{id}", method = RequestMethod.GET)
-	public void download(HttpServletResponse response, @PathVariable("id") String id) throws IOException, NeoException {
-		OutputStream outputStream = response.getOutputStream();
-		storeService.read(id, outputStream);
-	}
-	
-	@RequestMapping(value = "/storage/{id}", method = RequestMethod.DELETE)
-	public void delete(@PathVariable("id") String id){
-		storeService.delete(id);
-	}
-
-	@RequestMapping(value = "/storage/{id}", method = RequestMethod.GET)
-	public ResponseMessage<StoreInfo> get(@PathVariable("id") String id) throws NeoException{
-		StoreInfo storeInfo = storeService.get(id);
-		if(storeInfo == null){
-			throw new NeoException("store not found. id:" + id, APIMsgType.inner_store_not_found);
+	@RequestMapping(name = "/get", method = RequestMethod.GET)
+	public ResponseMessage<Store> get(@RequestParam(name = "id", required = true) String id) throws NeoException {
+		Store s = storeService.get(id);
+		if (s == null) {
+			throw new NeoException("store not find. id:" + id, APIMsgType.inner_store_not_found);
 		}
-		return new ResponseMessage<StoreInfo>(storeInfo);
+		return ResponseMessage.create(s);
+	}
+
+	@RequestMapping(name = "/delete", method = RequestMethod.GET)
+	public ResponseMessage<None> delete(@RequestParam(name = "id", required = true) String id) {
+		storeService.delete(id);
+		return ResponseMessage.createNoneBody();
+	}
+
+	@RequestMapping(name = "/save", method = RequestMethod.POST)
+	public ResponseMessage<Store> save(@RequestParam(name = "id", required = true) String id,
+			@RequestParam(name = "length", required = true) long length) {
+		Store s = storeService.save(id, length);
+		return ResponseMessage.create(s);
+	}
+
+	public ResponseMessage<Store> finish(@RequestParam(name = "id", required = true) String id) throws NeoException {
+		Store s = storeService.finish(id);
+		return ResponseMessage.create(s);
+	}
+
+	@RequestMapping(name = "/upload", method = RequestMethod.GET)
+	public ResponseMessage<Store> upload(@RequestParam(name = "id", required = true) String id,
+			HttpServletRequest request) throws NeoException, IOException {
+		long length = request.getContentLengthLong();
+		Store s = storeService.upload(id, length, request.getInputStream());
+		return ResponseMessage.create(s);
+	}
+
+	@RequestMapping(name = "/download", method = RequestMethod.GET)
+	public void download(@RequestParam(name = "id", required = true) String id,
+						 HttpServletRequest request,
+						 HttpServletResponse response) throws NeoException, IOException {
+		long position = TypeParserUtils.toLong(request.getHeader("pos"));
+		storeService.download(id, position, response.getOutputStream());
 	}
 }

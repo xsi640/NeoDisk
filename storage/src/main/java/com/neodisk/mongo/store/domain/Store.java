@@ -4,16 +4,19 @@ import org.springframework.data.annotation.Id;
 
 import com.neodisk.commons.UUIDUtils;
 
-public class StoreInfo {
+public class Store {
+	/**
+	 * Id
+	 */
 	@Id
 	private String id = UUIDUtils.randomUUIDString();
-	private int chunkSize;
-	private long chunkCount;
-	private long writeIndex;
+	private int partSize;
+	private long partCount;
+	private long latestPartIndex;
 	private long length;
-	private boolean isOk;
+	private boolean isOk = false;
 
-	public StoreInfo() {
+	public Store() {
 	}
 
 	public String getId() {
@@ -24,28 +27,28 @@ public class StoreInfo {
 		this.id = id;
 	}
 
-	public int getChunkSize() {
-		return chunkSize;
+	public int getPartSize() {
+		return partSize;
 	}
 
-	public void setChunkSize(int chunkSize) {
-		this.chunkSize = chunkSize;
+	public void setPartSize(int partSize) {
+		this.partSize = partSize;
 	}
 
-	public long getChunkCount() {
-		return chunkCount;
+	public long getPartCount() {
+		return partCount;
 	}
 
-	public void setChunkCount(long chunkCount) {
-		this.chunkCount = chunkCount;
+	public void setPartCount(long partCount) {
+		this.partCount = partCount;
 	}
 
-	public long getWriteIndex() {
-		return writeIndex;
+	public long getLatestPartIndex() {
+		return latestPartIndex;
 	}
 
-	public void setWriteIndex(long writeIndex) {
-		this.writeIndex = writeIndex;
+	public void setLatestPartIndex(long latestPartIndex) {
+		this.latestPartIndex = latestPartIndex;
 	}
 
 	public long getLength() {
@@ -67,8 +70,8 @@ public class StoreInfo {
 	@Override
 	public boolean equals(Object obj) {
 		boolean result = false;
-		if (obj instanceof StoreInfo) {
-			StoreInfo storeInfo = (StoreInfo) obj;
+		if (obj instanceof Store) {
+			Store storeInfo = (Store) obj;
 			result = storeInfo.getId().equals(this.getId());
 		}
 		return result;

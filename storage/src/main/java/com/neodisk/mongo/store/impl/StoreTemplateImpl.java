@@ -10,14 +10,14 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import com.neodisk.mongo.exceptions.StoreException;
 import com.neodisk.mongo.store.DataReader;
 import com.neodisk.mongo.store.DataWriter;
+import com.neodisk.mongo.store.PartWriter;
 import com.neodisk.mongo.store.StoreTemplate;
-import com.neodisk.mongo.store.domain.StoreInfo;
-import com.neodisk.mongo.store.domain.StoreUnit;
+import com.neodisk.mongo.store.domain.Store;
+import com.neodisk.mongo.store.domain.StorePart;
 
 @Service
 public class StoreTemplateImpl implements StoreTemplate {
@@ -26,49 +26,117 @@ public class StoreTemplateImpl implements StoreTemplate {
 	private MongoTemplate mongoTemplate;
 
 	@Override
-	public void save(String id, int chunkSize, long size, InputStream inputStream) throws IOException {
-		if (inputStream == null) {
-			throw new IllegalArgumentException("inputStream is null");
+	public Store save(String id, int partSize, long length, InputStream inputStream) throws IOException {
+		DataWriter dw = new DataWriter(id, partSize, length, inputStream, mongoTemplate);
+		dw.write();
+		return dw.getStore();
+	}
+
+	@Override
+	public Store save(String id, int partSize, long length){
+		this.delete(id);
+		Store s = new Store();
+		s.setId(id);
+		s.setPartSize(partSize);
+		s.setPartCount(length / partSize + 1);
+		s.setLength(length);
+		s.setOk(false);
+		mongoTemplate.save(s);
+		return s;
+	}
+
+	@Override
+	public void savePart(String id, long index, InputStream inputStream) throws IOException, StoreException {
+		Query q = new Query(Criteria.where("storeId").is(id).andOperator(Criteria.where("index").is(index)));
+		if(mongoTemplate.exists(q, StorePart.class)){
+			return;
 		}
-		if (StringUtils.isEmpty(id)) {
-			throw new IllegalArgumentException("id is null");
+		Store storeInfo = this.get(id);
+		if(storeInfo == null){
+			throw new StoreException("store is not exists.");
 		}
-		DataWriter writer = new DataWriter(id, chunkSize, size, inputStream, mongoTemplate);
-		writer.write();
+		PartWriter pw = new PartWriter(storeInfo, index, inputStream, mongoTemplate);
+		pw.write();
+		storeInfo.setLatestPartIndex(index);
+		mongoTemplate.save(storeInfo);
+	}
+
+	@Override
+	public void deletePart(String id, long index) {
+		Query q = new Query(Criteria.where("storeId").is(id).andOperator(Criteria.where("index").is(index)));
+		mongoTemplate.findAndRemove(q, StorePart.class);
+	}
+
+	@Override
+	public Store finishPart(String id) throws StoreException {
+		Store storeInfo = this.get(id);
+		if(storeInfo == null){
+			throw new StoreException("store is not exists.");
+		}
+		storeInfo.setOk(true);
+		mongoTemplate.save(storeInfo);
+		return storeInfo;
+	}
+
+	@Override
+	public void read(String id, long position, OutputStream outputStream)
+			throws StoreException, IOException {
+		Store storeInfo = this.get(id);
+		if(storeInfo == null){
+			throw new StoreException("store is not exists.");
+		}
+		if(!storeInfo.isOk()){
+			throw new StoreException("store is not ready.");
+		}
+		DataReader dr = new DataReader(storeInfo, position, mongoTemplate, outputStream);
+		dr.read();
 	}
 
 	@Override
 	public void read(String id, OutputStream outputStream) throws StoreException, IOException {
-		StoreInfo s = this.get(id);
-		if (s == null) {
-			throw new StoreException("not found storeInfo id:" + id);
+		Store storeInfo = this.get(id);
+		if(storeInfo == null){
+			throw new StoreException("store is not exists.");
 		}
-		DataReader reader = new DataReader(s, mongoTemplate, outputStream);
-		reader.read();
+		if(!storeInfo.isOk()){
+			throw new StoreException("store is not ready.");
+		}
+		DataReader dr = new DataReader(storeInfo, 0, mongoTemplate, outputStream);
+		dr.read();
 	}
 
 	@Override
 	public void delete(String id) {
-		mongoTemplate.remove(new Query(Criteria.where("storeId").is(id)), StoreUnit.class);
-		mongoTemplate.remove(new Query(Criteria.where(id).is(id)), StoreInfo.class);
-	}
-
-	@Override
-	public void clearUnit() {
-		@SuppressWarnings("unchecked")
-		List<String> storeIds = mongoTemplate.getCollection(mongoTemplate.getCollectionName(StoreUnit.class))
-									.distinct("storeId");
-		for(String storeId : storeIds){
-			long count = mongoTemplate.count(new Query(Criteria.where("id").is(storeId)), StoreInfo.class);
-			if(count == 0){
-				mongoTemplate.remove(new Query(Criteria.where("storeId").is(storeId)), StoreUnit.class);
-			}
-		}		
-	}
-
-	@Override
-	public StoreInfo get(String id) {
 		Query q = new Query(Criteria.where("id").is(id));
-		return mongoTemplate.findOne(q, StoreInfo.class);
+		mongoTemplate.findAllAndRemove(q, Store.class);
+		
+		q = new Query(Criteria.where("storeId").is(id));
+		mongoTemplate.findAndRemove(q, StorePart.class);
+	}
+
+	@Override
+	public Store get(String id) {
+		Query q = new Query(Criteria.where("id").is(id));
+		return mongoTemplate.findOne(q, Store.class);
+	}
+
+	@Override
+	public List<StorePart> findStorePartByStoreId(String storeId) {
+		Query q = new Query(Criteria.where("storeId").is(storeId));
+		return mongoTemplate.find(q, StorePart.class);
+	}
+
+	@Override
+	public List<StorePart> findStorePartByStoreId(String storeId, int firstResult, int maxResult) {
+		Query q = new Query(Criteria.where("storeId").is(storeId));
+		q.skip(firstResult);
+		q.limit(maxResult);
+		return mongoTemplate.find(q, StorePart.class);
+	}
+
+	@Override
+	public long countByStoreId(String storeId) {
+		Query q = new Query(Criteria.where("storeId").is(storeId));
+		return mongoTemplate.count(q, Long.class);
 	}
 }

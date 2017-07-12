@@ -9,14 +9,14 @@ import org.springframework.data.mongodb.core.index.CompoundIndexes;
 @CompoundIndexes({ 
 	@CompoundIndex(name = "index_storeId_idx", def = "{index : 1, storeId : 1}") 
 }) 
-public class StoreUnit {
+public class StorePart {
 	@Id
 	private String id;
 	private long index;
 	private byte[] data;
 	private String storeId;
 
-	public StoreUnit() {
+	public StorePart() {
 	}
 	
 	public String getId() {
@@ -54,8 +54,8 @@ public class StoreUnit {
 	@Override
 	public boolean equals(Object obj) {
 		boolean result = false;
-		if (obj instanceof StoreUnit) {
-			StoreUnit storeUnit = (StoreUnit) obj;
+		if (obj instanceof StorePart) {
+			StorePart storeUnit = (StorePart) obj;
 			result = storeUnit.getId().equals(storeUnit.getId());
 		}
 		return result;
